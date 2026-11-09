@@ -1,7 +1,9 @@
+
 package com.recado.controle_membros.controller;
 
-import com.recado.controle_membros.Infrastructure.entitys.Membro;
+import com.recado.controle_membros.infrastructure.entities.Membro;
 import com.recado.controle_membros.business.MembroService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,20 +22,18 @@ public class MembroController {
 
     @GetMapping
     public ResponseEntity<List<Membro>> listarTodos() {
-        return ResponseEntity.ok(
-                membroService.listarTodos()
-        );
+        return ResponseEntity.ok(membroService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Membro> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(
-                membroService.buscarPorId(id)
-        );
+    public ResponseEntity<Membro> buscarPorId(@PathVariable Integer id) {
+        return ResponseEntity.ok(membroService.buscarPorId(id));
     }
 
     @PostMapping
-    public ResponseEntity<Membro> cadastrar(@RequestBody Membro membro) {
+    public ResponseEntity<Membro> cadastrar(
+            @Valid @RequestBody Membro membro
+    ) {
         Membro novoMembro = membroService.cadastrar(membro);
 
         return ResponseEntity
@@ -43,8 +43,8 @@ public class MembroController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Membro> atualizar(
-            @PathVariable Long id,
-            @RequestBody Membro membro
+            @PathVariable Integer id,
+            @Valid @RequestBody Membro membro
     ) {
         return ResponseEntity.ok(
                 membroService.atualizar(id, membro)
@@ -52,7 +52,7 @@ public class MembroController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+    public ResponseEntity<Void> excluir(@PathVariable Integer id) {
         membroService.excluir(id);
 
         return ResponseEntity.noContent().build();

@@ -1,502 +1,321 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#174b75">
+    <meta name="description" content="Painel administrativo para gerenciar os membros da Comunidade Recado.">
+    <title>Controle de Membros · Comunidade Recado</title>
 
-    <title>Controle de Membros</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-            rel="stylesheet"
-    >
-
-    <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.468.0/lucide.min.css"
-    >
-
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" href="/logo-recado.png">
+    <link rel="stylesheet" href="/style.css">
 </head>
-
 <body>
+
+<a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
 
 <div class="app">
 
-    <!-- SIDEBAR -->
+    <!-- ===================== MENU LATERAL ===================== -->
     <aside class="sidebar">
-
         <div class="brand">
-            <div class="brand-icon">
-                <i data-lucide="users"></i>
-            </div>
-
-            <div>
-                <strong>Controle</strong>
-                <span>de Membros</span>
+            <span class="brand-logo"><img src="/logo-recado.png" alt="Logo da Comunidade Recado"></span>
+            <div class="brand-text">
+                <strong>Comunidade Recado</strong>
+                <span>Controle de Membros</span>
             </div>
         </div>
 
-        <nav class="navigation">
-
-            <button class="nav-item active">
-                <i data-lucide="layout-dashboard"></i>
+        <nav class="nav" aria-label="Navegação principal">
+            <a class="nav-link" href="#dashboard" data-pagina="dashboard">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
                 <span>Dashboard</span>
-            </button>
-
-            <button class="nav-item" onclick="scrollToMembers()">
-                <i data-lucide="users"></i>
+            </a>
+            <a class="nav-link" href="#membros" data-pagina="membros">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg>
                 <span>Membros</span>
-            </button>
-
+                <span class="nav-badge" id="nav-contador">0</span>
+            </a>
         </nav>
 
         <div class="sidebar-footer">
-            <div class="system-status">
-                <span class="status-dot"></span>
-
-                <div>
-                    <strong>Sistema online</strong>
-                    <small>Banco conectado</small>
-                </div>
+            <div class="api-status carregando" id="api-status" role="status">
+                <span class="api-dot" aria-hidden="true"></span>
+                <span id="api-status-texto">Conectando ao servidor…</span>
             </div>
         </div>
-
     </aside>
 
+    <!-- ===================== ÁREA PRINCIPAL ===================== -->
+    <div class="main">
 
-    <!-- CONTEÚDO -->
-    <main class="main">
-
-        <!-- HEADER -->
         <header class="topbar">
-
             <div>
-                <p class="eyebrow">GESTÃO</p>
-                <h1>Dashboard</h1>
+                <h1 id="page-title">Dashboard</h1>
+                <p id="page-subtitle">Visão geral da Comunidade Recado</p>
             </div>
-
-            <button class="primary-button" onclick="abrirModal()">
-                <i data-lucide="plus"></i>
-                Novo membro
+            <button type="button" class="btn btn-ghost" id="btn-atualizar" title="Recarregar os dados do servidor">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 0-15.5-6.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 15.5 6.2L21 16"/><path d="M16 16h5v5"/></svg>
+                <span>Atualizar</span>
             </button>
-
         </header>
 
+        <main id="conteudo" tabindex="-1">
 
-        <!-- DASHBOARD -->
-        <section class="dashboard">
+            <!-- ============ DASHBOARD ============ -->
+            <section id="pagina-dashboard" class="pagina" data-pagina="dashboard">
 
-            <!-- BOAS-VINDAS -->
-            <div class="welcome-card">
-
-                <div>
-                    <span class="welcome-label">CONTROLE DE MEMBROS</span>
-
-                    <h2>
-                        Gerencie seus membros
-                        <span>com facilidade.</span>
-                    </h2>
-
-                    <p>
-                        Cadastre, pesquise e mantenha as informações
-                        dos membros sempre organizadas.
-                    </p>
+                <div class="alerta alerta-erro" id="dashboard-erro" role="alert" hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                    <p id="dashboard-erro-texto"></p>
+                    <button type="button" class="btn btn-small" id="btn-tentar-dashboard">Tentar novamente</button>
                 </div>
 
-                <div class="welcome-decoration">
-                    <i data-lucide="users-round"></i>
-                </div>
-
-            </div>
-
-
-            <!-- ESTATÍSTICAS -->
-            <div class="stats-grid">
-
-                <div class="stat-card">
-
-                    <div class="stat-icon blue">
-                        <i data-lucide="users"></i>
-                    </div>
-
+                <div class="hero">
                     <div>
-                        <span>Total de membros</span>
-                        <strong id="totalMembros">0</strong>
+                        <span class="hero-selo">Painel administrativo</span>
+                        <h2>Bem-vindo ao controle de membros</h2>
+                        <p>Acompanhe os números da comunidade e mantenha os cadastros sempre atualizados.</p>
                     </div>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                    <div class="stat-icon green">
-                        <i data-lucide="map-pin"></i>
-                    </div>
-
-                    <div>
-                        <span>Casas de missão</span>
-                        <strong id="totalCasas">0</strong>
-                    </div>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                    <div class="stat-icon purple">
-                        <i data-lucide="heart"></i>
-                    </div>
-
-                    <div>
-                        <span>Ministérios</span>
-                        <strong id="totalMinisterios">0</strong>
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- MEMBROS -->
-            <section class="members-section" id="membersSection">
-
-                <div class="section-header">
-
-                    <div>
-                        <p class="eyebrow">CADASTRO</p>
-                        <h2>Membros</h2>
-                        <p>Consulte e gerencie os membros cadastrados.</p>
-                    </div>
-
-                    <button class="secondary-button" onclick="carregarMembros()">
-                        <i data-lucide="refresh-cw"></i>
-                        Atualizar
+                    <button type="button" class="btn btn-gold" id="ir-para-membros">
+                        Ver listagem de membros
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                     </button>
-
                 </div>
 
-
-                <!-- PESQUISA -->
-                <div class="search-panel">
-
-                    <div class="search-box">
-
-                        <i data-lucide="search"></i>
-
-                        <input
-                                type="text"
-                                id="campoPesquisa"
-                                placeholder="Pesquisar por nome, cidade ou ministério..."
-                                oninput="filtrarMembros()"
-                        >
-
-                    </div>
-
-
-                    <select id="filtroEtapa" onchange="filtrarMembros()">
-
-                        <option value="">Todas as etapas</option>
-
-                        <option value="VOCACIONAL">
-                            Vocacional
-                        </option>
-
-                        <option value="POSTULANTADO">
-                            Postulantado
-                        </option>
-
-                        <option value="DISCIPULADO">
-                            Discipulado
-                        </option>
-
-                        <option value="CONSAGRADO">
-                            Consagrado
-                        </option>
-
-                    </select>
-
-
-                    <select id="filtroCasa" onchange="filtrarMembros()">
-
-                        <option value="">Todas as casas</option>
-
-                        <option value="FORTALEZA">
-                            Fortaleza
-                        </option>
-
-                        <option value="TATUÍ">
-                            Tatuí
-                        </option>
-
-                        <option value="FRANÇA">
-                            França
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- TABELA -->
-                <div class="table-container">
-
-                    <table>
-
-                        <thead>
-
-                        <tr>
-
-                            <th>Membro</th>
-                            <th>Cidade</th>
-                            <th>Ministério</th>
-                            <th>Etapa</th>
-                            <th>Casa de missão</th>
-                            <th>Ações</th>
-
-                        </tr>
-
-                        </thead>
-
-                        <tbody id="tabelaMembros">
-
-                        </tbody>
-
-                    </table>
-
-
-                    <!-- ESTADO VAZIO -->
-                    <div id="estadoVazio" class="empty-state">
-
-                        <div class="empty-icon">
-                            <i data-lucide="users"></i>
+                <div class="stats">
+                    <article class="stat-card">
+                        <div class="stat-topo">
+                            <span class="stat-icone azul"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg></span>
+                            <h3>Total de membros</h3>
                         </div>
+                        <p class="stat-valor" id="stat-total">—</p>
+                        <p class="stat-legenda">Cadastrados no sistema</p>
+                    </article>
 
-                        <h3>Nenhum membro encontrado</h3>
+                    <article class="stat-card">
+                        <div class="stat-topo">
+                            <span class="stat-icone dourado"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></span>
+                            <h3>Primeiro ano formativo</h3>
+                        </div>
+                        <p class="stat-valor" id="stat-primeiro">—</p>
+                        <div class="barra"><span id="barra-primeiro"></span></div>
+                        <p class="stat-legenda" id="stat-primeiro-pct">&nbsp;</p>
+                    </article>
 
-                        <p>
-                            Tente alterar sua pesquisa ou cadastre um novo membro.
-                        </p>
-
-                        <button class="primary-button" onclick="abrirModal()">
-                            <i data-lucide="plus"></i>
-                            Cadastrar membro
-                        </button>
-
-                    </div>
-
+                    <article class="stat-card">
+                        <div class="stat-topo">
+                            <span class="stat-icone escuro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></span>
+                            <h3>Segundo ano formativo</h3>
+                        </div>
+                        <p class="stat-valor" id="stat-segundo">—</p>
+                        <div class="barra"><span id="barra-segundo"></span></div>
+                        <p class="stat-legenda" id="stat-segundo-pct">&nbsp;</p>
+                    </article>
                 </div>
 
+                <div class="paineis">
+                    <article class="painel">
+                        <header class="painel-cabecalho">
+                            <h3>Membros por ministério</h3>
+                            <span>Calculado a partir dos cadastros</span>
+                        </header>
+                        <ul class="barras" id="lista-ministerios"></ul>
+                    </article>
+
+                    <article class="painel">
+                        <header class="painel-cabecalho">
+                            <h3>Cadastros recentes</h3>
+                            <span>Últimos membros adicionados</span>
+                        </header>
+                        <ul class="recentes" id="lista-recentes"></ul>
+                    </article>
+                </div>
             </section>
 
-        </section>
+            <!-- ============ MEMBROS ============ -->
+            <section id="pagina-membros" class="pagina" data-pagina="membros" hidden>
 
-    </main>
+                <div class="secao-cabecalho">
+                    <div>
+                        <h2>Lista de membros</h2>
+                        <p>Pesquise, edite ou exclua os membros cadastrados.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="novo-membro">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                        Novo membro
+                    </button>
+                </div>
 
+                <div class="alerta alerta-erro" id="membros-erro" role="alert" hidden></div>
+
+                <div class="barra-ferramentas">
+                    <div class="campo-busca">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input type="search" id="pesquisa" placeholder="Pesquisar membros…" title="Pesquisa por nome, cidade, ministério, etapa formativa ou casa de missão" autocomplete="off" aria-label="Pesquisar por nome, cidade, ministério, etapa ou casa de missão">
+                        <button type="button" id="limpar-pesquisa" class="limpar" aria-label="Limpar pesquisa" hidden>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="filtros" id="filtros-ano" role="group" aria-label="Filtrar por ano formativo">
+                        <button type="button" data-ano="todos" aria-pressed="true">Todos</button>
+                        <button type="button" data-ano="1" aria-pressed="false">1º ano</button>
+                        <button type="button" data-ano="2" aria-pressed="false">2º ano</button>
+                    </div>
+                </div>
+
+                <p class="contador" id="contador-resultados" aria-live="polite"></p>
+
+                <div class="tabela-wrapper">
+                    <table id="tabela-membros">
+                        <thead>
+                        <tr>
+                            <th scope="col" data-campo="nome" aria-sort="ascending"><button type="button" class="ordenar">Nome</button></th>
+                            <th scope="col" data-campo="anoFormativo" aria-sort="none"><button type="button" class="ordenar">Ano</button></th>
+                            <th scope="col" data-campo="cidade" aria-sort="none"><button type="button" class="ordenar">Cidade</button></th>
+                            <th scope="col" data-campo="ministerio" aria-sort="none"><button type="button" class="ordenar">Ministério</button></th>
+                            <th scope="col" data-campo="etapa" aria-sort="none"><button type="button" class="ordenar">Etapa</button></th>
+                            <th scope="col" data-campo="casaMissao" aria-sort="none"><button type="button" class="ordenar">Casa de missão</button></th>
+                            <th scope="col" class="col-acoes">Ações</th>
+                        </tr>
+                        </thead>
+                        <tbody id="lista-membros"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
 </div>
 
 
-<!-- MODAL -->
-<div id="modal" class="modal-overlay">
-
-    <div class="modal">
-
-        <div class="modal-header">
-
+<!-- ===================== MODAL: CADASTRAR / EDITAR ===================== -->
+<dialog id="modal-membro" aria-labelledby="titulo-modal">
+    <form id="form-membro" novalidate>
+        <header class="dialogo-cabecalho">
             <div>
-                <p class="eyebrow">CADASTRO</p>
-                <h2 id="tituloModal">Novo membro</h2>
+                <span class="chip-http" id="chip-http">POST</span>
+                <h2 id="titulo-modal">Novo membro</h2>
+                <p id="subtitulo-modal">Preencha os dados para cadastrar.</p>
+            </div>
+            <button type="button" class="icone-fechar" id="fechar-modal" aria-label="Fechar">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </header>
+
+        <div class="dialogo-corpo">
+            <input type="hidden" id="membro-id">
+
+            <div class="alerta alerta-erro" id="erro-formulario" role="alert" hidden></div>
+
+            <div class="grade-form">
+                <div class="campo campo-largo">
+                    <label for="nome">Nome completo <abbr title="obrigatório">*</abbr></label>
+                    <input type="text" id="nome" maxlength="255" autocomplete="off" aria-required="true" aria-describedby="erro-nome">
+                    <span class="erro-campo" id="erro-nome"></span>
+                </div>
+
+                <div class="campo">
+                    <label for="anoFormativo">Ano formativo <abbr title="obrigatório">*</abbr></label>
+                    <select id="anoFormativo" aria-required="true" aria-describedby="erro-anoFormativo">
+                        <option value="">Selecione…</option>
+                        <option value="1">1º ano</option>
+                        <option value="2">2º ano</option>
+                    </select>
+                    <span class="erro-campo" id="erro-anoFormativo"></span>
+                </div>
+
+                <div class="campo">
+                    <label for="etapa">Etapa formativa <abbr title="obrigatório">*</abbr></label>
+                    <input type="text" id="etapa" list="sugestoes-etapa" maxlength="255" autocomplete="off" aria-required="true" aria-describedby="erro-etapa">
+                    <datalist id="sugestoes-etapa"></datalist>
+                    <span class="erro-campo" id="erro-etapa"></span>
+                </div>
+
+                <div class="campo">
+                    <label for="cidade">Cidade</label>
+                    <input type="text" id="cidade" list="sugestoes-cidade" maxlength="255" autocomplete="off" aria-describedby="erro-cidade">
+                    <datalist id="sugestoes-cidade"></datalist>
+                    <span class="erro-campo" id="erro-cidade"></span>
+                </div>
+
+                <div class="campo">
+                    <label for="ministerio">Ministério</label>
+                    <input type="text" id="ministerio" list="sugestoes-ministerio" maxlength="255" autocomplete="off" aria-describedby="erro-ministerio">
+                    <datalist id="sugestoes-ministerio"></datalist>
+                    <span class="erro-campo" id="erro-ministerio"></span>
+                </div>
+
+                <div class="campo campo-largo">
+                    <label for="casaMissao">Casa de missão</label>
+                    <input type="text" id="casaMissao" list="sugestoes-casaMissao" maxlength="255" autocomplete="off" aria-describedby="erro-casaMissao">
+                    <datalist id="sugestoes-casaMissao"></datalist>
+                    <span class="erro-campo" id="erro-casaMissao"></span>
+                </div>
             </div>
 
-            <button class="close-button" onclick="fecharModal()">
-                <i data-lucide="x"></i>
-            </button>
-
+            <p class="nota-form"><abbr title="obrigatório">*</abbr> Campos obrigatórios.</p>
         </div>
 
-
-        <form id="formMembro">
-
-            <input type="hidden" id="membroId">
-
-
-            <div class="form-grid">
-
-                <div class="form-group full">
-
-                    <label for="nome">
-                        Nome completo
-                    </label>
-
-                    <input
-                            type="text"
-                            id="nome"
-                            required
-                            placeholder="Digite o nome completo"
-                    >
-
-                </div>
+        <footer class="dialogo-rodape">
+            <button type="button" class="btn btn-ghost" id="cancelar-modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="salvar-membro">
+                <span class="spinner" aria-hidden="true"></span>
+                <span id="salvar-texto">Salvar membro</span>
+            </button>
+        </footer>
+    </form>
+</dialog>
 
 
-                <div class="form-group">
-
-                    <label for="ano">
-                        Ano de entrada
-                    </label>
-
-                    <input
-                            type="number"
-                            id="ano"
-                            required
-                            placeholder="2026"
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="cidade">
-                        Cidade
-                    </label>
-
-                    <input
-                            type="text"
-                            id="cidade"
-                            required
-                            placeholder="Ex.: Tatuí"
-                    >
-
-                </div>
-
-
-                <div class="form-group full">
-
-                    <label for="ministerio">
-                        Ministério
-                    </label>
-
-                    <input
-                            type="text"
-                            id="ministerio"
-                            required
-                            placeholder="Ex.: Música"
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="etapa">
-                        Etapa
-                    </label>
-
-                    <select id="etapa" required>
-
-                        <option value="">
-                            Selecione
-                        </option>
-
-                        <option value="VOCACIONAL">
-                            Vocacional
-                        </option>
-
-                        <option value="POSTULANTADO">
-                            Postulantado
-                        </option>
-
-                        <option value="DISCIPULADO">
-                            Discipulado
-                        </option>
-
-                        <option value="CONSAGRADO">
-                            Consagrado
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="casaMissao">
-                        Casa de missão
-                    </label>
-
-                    <select id="casaMissao" required>
-
-                        <option value="">
-                            Selecione
-                        </option>
-
-                        <option value="FORTALEZA">
-                            Fortaleza
-                        </option>
-
-                        <option value="TATUÍ">
-                            Tatuí
-                        </option>
-
-                        <option value="FRANÇA">
-                            França
-                        </option>
-
-                    </select>
-
-                </div>
-
+<!-- ===================== MODAL: DETALHES (GET /membros/{id}) ===================== -->
+<dialog id="modal-detalhes" aria-labelledby="det-nome">
+    <div class="dialogo-cabecalho">
+        <div class="det-identidade">
+            <span class="avatar avatar-grande" id="det-avatar" aria-hidden="true"></span>
+            <div>
+                <span class="chip-http chip-get">GET</span>
+                <h2 id="det-nome"></h2>
+                <p id="det-id"></p>
             </div>
-
-
-            <div class="modal-footer">
-
-                <button
-                        type="button"
-                        class="secondary-button"
-                        onclick="fecharModal()"
-                >
-                    Cancelar
-                </button>
-
-                <button
-                        type="submit"
-                        class="primary-button"
-                >
-                    <i data-lucide="save"></i>
-                    Salvar membro
-                </button>
-
-            </div>
-
-        </form>
-
+        </div>
+        <button type="button" class="icone-fechar" id="det-fechar-x" aria-label="Fechar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
     </div>
 
-</div>
-
-
-<!-- TOAST -->
-<div id="toast" class="toast">
-
-    <div class="toast-icon">
-        <i data-lucide="check"></i>
+    <div class="dialogo-corpo">
+        <dl class="detalhes" id="det-campos"></dl>
     </div>
 
-    <div>
-        <strong id="toastTitulo">Sucesso</strong>
-        <span id="toastMensagem">Operação realizada.</span>
-    </div>
+    <footer class="dialogo-rodape">
+        <button type="button" class="btn btn-danger-ghost" id="det-excluir">Excluir</button>
+        <button type="button" class="btn btn-primary" id="det-editar">Editar membro</button>
+    </footer>
+</dialog>
 
-</div>
 
+<!-- ===================== MODAL: CONFIRMAR EXCLUSÃO ===================== -->
+<dialog id="modal-confirmar" class="dialogo-pequeno" aria-labelledby="confirmar-titulo">
+    <form method="dialog">
+        <div class="dialogo-corpo confirmar-corpo">
+            <span class="confirmar-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            </span>
+            <h2 id="confirmar-titulo">Excluir membro?</h2>
+            <p id="confirmar-mensagem"></p>
+        </div>
+        <footer class="dialogo-rodape dialogo-rodape-centro">
+            <button type="submit" value="cancelar" class="btn btn-ghost" autofocus>Cancelar</button>
+            <button type="submit" value="ok" class="btn btn-danger" id="confirmar-ok">Sim, excluir</button>
+        </footer>
+    </form>
+</dialog>
 
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="/js/app.js"></script>
+<!-- Notificações (toasts) -->
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
+<script src="/app.js"></script>
 </body>
 </html>

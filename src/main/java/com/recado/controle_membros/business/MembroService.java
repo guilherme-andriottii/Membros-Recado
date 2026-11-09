@@ -1,7 +1,8 @@
+
 package com.recado.controle_membros.business;
 
-import com.recado.controle_membros.Infrastructure.entitys.Membro;
-import com.recado.controle_membros.Infrastructure.repository.MembroRepository;
+import com.recado.controle_membros.infrastructure.entities.Membro;
+import com.recado.controle_membros.infrastructure.repository.MembroRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,10 +20,12 @@ public class MembroService {
         return membroRepository.findAll();
     }
 
-    public Membro buscarPorId(Long id) {
+    public Membro buscarPorId(Integer id) {
         return membroRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Membro não encontrado com o ID: " + id)
+                        new RuntimeException(
+                                "Membro não encontrado com o ID: " + id
+                        )
                 );
     }
 
@@ -30,12 +33,11 @@ public class MembroService {
         return membroRepository.save(membro);
     }
 
-    public Membro atualizar(Long id, Membro dados) {
-
+    public Membro atualizar(Integer id, Membro dados) {
         Membro membro = buscarPorId(id);
 
         membro.setNome(dados.getNome());
-        membro.setAno(dados.getAno());
+        membro.setAnoFormativo(dados.getAnoFormativo());
         membro.setCidade(dados.getCidade());
         membro.setMinisterio(dados.getMinisterio());
         membro.setEtapa(dados.getEtapa());
@@ -44,8 +46,7 @@ public class MembroService {
         return membroRepository.save(membro);
     }
 
-    public void excluir(Long id) {
-
+    public void excluir(Integer id) {
         if (!membroRepository.existsById(id)) {
             throw new RuntimeException(
                     "Membro não encontrado com o ID: " + id

@@ -1,6 +1,9 @@
-package com.recado.controle_membros.Infrastructure.entitys;
+
+package com.recado.controle_membros.infrastructure.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 @Entity
 @Table(name = "membros")
@@ -8,24 +11,26 @@ public class Membro {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
-    @Column(nullable = false)
+    @Column(name = "nome", nullable = false)
     private String nome;
 
-    @Column(nullable = false)
-    private Integer ano;
+    @Min(value = 1, message = "O ano formativo deve ser 1 ou 2")
+    @Max(value = 2, message = "O ano formativo deve ser 1 ou 2")
+    @Column(name = "ano")
+    private Integer anoFormativo;
 
-    @Column(nullable = false)
+    @Column(name = "cidade")
     private String cidade;
 
-    @Column(nullable = false)
+    @Column(name = "ministerio")
     private String ministerio;
 
-    @Column(nullable = false)
+    @Column(name = "etapa_formativa", nullable = false)
     private String etapa;
 
-    @Column(name = "casa_missao", nullable = false)
+    @Column(name = "casa_missao")
     private String casaMissao;
 
     public Membro() {
@@ -33,21 +38,21 @@ public class Membro {
 
     public Membro(
             String nome,
-            Integer ano,
+            Integer anoFormativo,
             String cidade,
             String ministerio,
             String etapa,
             String casaMissao
     ) {
         this.nome = nome;
-        this.ano = ano;
+        this.anoFormativo = anoFormativo;
         this.cidade = cidade;
         this.ministerio = ministerio;
         this.etapa = etapa;
         this.casaMissao = casaMissao;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -59,12 +64,12 @@ public class Membro {
         this.nome = nome;
     }
 
-    public Integer getAno() {
-        return ano;
+    public Integer getAnoFormativo() {
+        return anoFormativo;
     }
 
-    public void setAno(Integer ano) {
-        this.ano = ano;
+    public void setAnoFormativo(Integer anoFormativo) {
+        this.anoFormativo = anoFormativo;
     }
 
     public String getCidade() {
