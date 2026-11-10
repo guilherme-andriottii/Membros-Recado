@@ -1,19 +1,33 @@
 <!DOCTYPE html>
+<!--
+     index.html = a ESTRUTURA da tela (só os "esqueletos" dos elementos).
+      - style.css  -> define a aparência (cores, layout)
+      - app.js     -> dá vida à página (busca dados na API e desenha tudo)
+     O Spring Boot serve este arquivo da pasta resources/static; ao abrir
+     http://localhost:8080/ o PaginaController redireciona para cá.
+     A página é uma SPA simples: tem 2 "abas" (Dashboard e Membros) e o JavaScript
+     apenas mostra uma e esconde a outra (atributo hidden).
+     Elementos com id="..." são os que o app.js procura para preencher/alterar.
+-->
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <!-- Faz a página se adaptar ao tamanho da tela do celular. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#174b75">
     <meta name="description" content="Painel administrativo para gerenciar os membros da Comunidade Recado.">
     <title>Controle de Membros · Comunidade Recado</title>
 
     <link rel="icon" href="/logo-recado.png">
+    <!-- Carrega a aparência da página (style.css). -->
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
+<!-- Acessibilidade: link invisível que, com o teclado (Tab), pula direto para o conteúdo. -->
 <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
 
+<!-- Contêiner geral: o CSS o divide em 2 colunas (menu lateral + área principal). -->
 <div class="app">
 
     <!-- ===================== MENU LATERAL ===================== -->
@@ -26,6 +40,10 @@
             </div>
         </div>
 
+        <!--
+             Menu: cada link usa "#dashboard" / "#membros". O app.js escuta a mudança
+             desse "#" (hashchange) e troca a aba exibida, sem recarregar a página.
+        -->
         <nav class="nav" aria-label="Navegação principal">
             <a class="nav-link" href="#dashboard" data-pagina="dashboard">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
@@ -34,10 +52,12 @@
             <a class="nav-link" href="#membros" data-pagina="membros">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg>
                 <span>Membros</span>
+                <!-- Número ao lado de "Membros": total de cadastros (preenchido pelo app.js). -->
                 <span class="nav-badge" id="nav-contador">0</span>
             </a>
         </nav>
 
+        <!-- Indicador de conexão com a API: verde (online), vermelho (offline) ou amarelo (carregando). -->
         <div class="sidebar-footer">
             <div class="api-status carregando" id="api-status" role="status">
                 <span class="api-dot" aria-hidden="true"></span>
@@ -49,6 +69,7 @@
     <!-- ===================== ÁREA PRINCIPAL ===================== -->
     <div class="main">
 
+        <!-- Barra do topo: título da aba atual + botão que recarrega os dados (GET /membros). -->
         <header class="topbar">
             <div>
                 <h1 id="page-title">Dashboard</h1>
@@ -60,17 +81,20 @@
             </button>
         </header>
 
+        <!-- Área onde as abas (seções .pagina) são exibidas. -->
         <main id="conteudo" tabindex="-1">
 
             <!-- ============ DASHBOARD ============ -->
             <section id="pagina-dashboard" class="pagina" data-pagina="dashboard">
 
+                <!-- Caixa de erro do dashboard: só aparece (hidden removido) se a API falhar. -->
                 <div class="alerta alerta-erro" id="dashboard-erro" role="alert" hidden>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
                     <p id="dashboard-erro-texto"></p>
                     <button type="button" class="btn btn-small" id="btn-tentar-dashboard">Tentar novamente</button>
                 </div>
 
+                <!-- Faixa de boas-vindas com botão que leva para a aba Membros. -->
                 <div class="hero">
                     <div>
                         <span class="hero-selo">Painel administrativo</span>
@@ -83,12 +107,18 @@
                     </button>
                 </div>
 
+                <!--
+                     3 CARTÕES DE NÚMEROS. Os valores são "—" até o app.js calcular com os dados reais.
+                     [ALTERADO na lógica] Consagrados (ano 0 = Concluído) NÃO entram na contagem
+                     de 1º nem de 2º ano; eles continuam somando apenas no "Total de membros".
+                -->
                 <div class="stats">
                     <article class="stat-card">
                         <div class="stat-topo">
                             <span class="stat-icone azul"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg></span>
                             <h3>Total de membros</h3>
                         </div>
+                        <!-- Total de membros (quantidade de itens devolvidos por GET /membros). -->
                         <p class="stat-valor" id="stat-total">—</p>
                         <p class="stat-legenda">Cadastrados no sistema</p>
                     </article>
@@ -98,6 +128,7 @@
                             <span class="stat-icone dourado"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></span>
                             <h3>Primeiro ano formativo</h3>
                         </div>
+                        <!-- Quantidade no 1º ano formativo + barra de porcentagem logo abaixo. -->
                         <p class="stat-valor" id="stat-primeiro">—</p>
                         <div class="barra"><span id="barra-primeiro"></span></div>
                         <p class="stat-legenda" id="stat-primeiro-pct">&nbsp;</p>
@@ -108,18 +139,21 @@
                             <span class="stat-icone escuro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></span>
                             <h3>Segundo ano formativo</h3>
                         </div>
+                        <!-- Quantidade no 2º ano formativo + barra de porcentagem logo abaixo. -->
                         <p class="stat-valor" id="stat-segundo">—</p>
                         <div class="barra"><span id="barra-segundo"></span></div>
                         <p class="stat-legenda" id="stat-segundo-pct">&nbsp;</p>
                     </article>
                 </div>
 
+                <!-- Dois painéis lado a lado: ranking de ministérios e últimos cadastros. -->
                 <div class="paineis">
                     <article class="painel">
                         <header class="painel-cabecalho">
                             <h3>Membros por ministério</h3>
                             <span>Calculado a partir dos cadastros</span>
                         </header>
+                        <!-- Lista preenchida pelo app.js: os 6 ministérios com mais membros (barras). -->
                         <ul class="barras" id="lista-ministerios"></ul>
                     </article>
 
@@ -128,12 +162,14 @@
                             <h3>Cadastros recentes</h3>
                             <span>Últimos membros adicionados</span>
                         </header>
+                        <!-- Lista preenchida pelo app.js: os 5 cadastros mais recentes (maior ID). -->
                         <ul class="recentes" id="lista-recentes"></ul>
                     </article>
                 </div>
             </section>
 
             <!-- ============ MEMBROS ============ -->
+            <!-- ABA MEMBROS (começa escondida; o app.js a exibe quando a URL termina em #membros). -->
             <section id="pagina-membros" class="pagina" data-pagina="membros" hidden>
 
                 <div class="secao-cabecalho">
@@ -141,6 +177,7 @@
                         <h2>Lista de membros</h2>
                         <p>Pesquise, edite ou exclua os membros cadastrados.</p>
                     </div>
+                    <!-- Botão que abre o formulário vazio (cadastro = POST /membros). -->
                     <button type="button" class="btn btn-primary" id="novo-membro">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                         Novo membro
@@ -149,29 +186,40 @@
 
                 <div class="alerta alerta-erro" id="membros-erro" role="alert" hidden></div>
 
+                <!-- Ferramentas da lista: campo de pesquisa + filtro por ano formativo. -->
                 <div class="barra-ferramentas">
                     <div class="campo-busca">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                        <!-- Pesquisa em tempo real (a cada tecla) por nome, cidade, ministério, etapa, casa ou ano (ex.: "concluido"). -->
                         <input type="search" id="pesquisa" placeholder="Pesquisar membros…" title="Pesquisa por nome, cidade, ministério, etapa formativa ou casa de missão" autocomplete="off" aria-label="Pesquisar por nome, cidade, ministério, etapa ou casa de missão">
                         <button type="button" id="limpar-pesquisa" class="limpar" aria-label="Limpar pesquisa" hidden>
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
                         </button>
                     </div>
 
+                    <!--
+                         Filtro por ano. O valor de data-ano é lido pelo app.js:
+                          todos = sem filtro | 1 = 1º ano | 2 = 2º ano | 0 = Concluído (consagrados)
+                         [NOVO] botão "Concluído".
+                    -->
                     <div class="filtros" id="filtros-ano" role="group" aria-label="Filtrar por ano formativo">
                         <button type="button" data-ano="todos" aria-pressed="true">Todos</button>
                         <button type="button" data-ano="1" aria-pressed="false">1º ano</button>
                         <button type="button" data-ano="2" aria-pressed="false">2º ano</button>
+                        <button type="button" data-ano="0" aria-pressed="false">Concluído</button>
                     </div>
                 </div>
 
                 <p class="contador" id="contador-resultados" aria-live="polite"></p>
 
                 <div class="tabela-wrapper">
+                    <!-- Tabela de membros. O <tbody> é totalmente desenhado pelo app.js (uma linha por membro). -->
                     <table id="tabela-membros">
                         <thead>
                         <tr>
+                            <!-- Cabeçalhos clicáveis: clicar ordena pela coluna (data-campo = nome da propriedade do JSON). -->
                             <th scope="col" data-campo="nome" aria-sort="ascending"><button type="button" class="ordenar">Nome</button></th>
+                            <!-- Coluna "Ano": mostra 1º ano, 2º ano ou "Concluído" (para ano 0 / consagrado). -->
                             <th scope="col" data-campo="anoFormativo" aria-sort="none"><button type="button" class="ordenar">Ano</button></th>
                             <th scope="col" data-campo="cidade" aria-sort="none"><button type="button" class="ordenar">Cidade</button></th>
                             <th scope="col" data-campo="ministerio" aria-sort="none"><button type="button" class="ordenar">Ministério</button></th>
@@ -180,6 +228,7 @@
                             <th scope="col" class="col-acoes">Ações</th>
                         </tr>
                         </thead>
+                        <!-- Corpo da tabela: preenchido pelo app.js. -->
                         <tbody id="lista-membros"></tbody>
                     </table>
                 </div>
@@ -191,6 +240,11 @@
 
 
 <!-- ===================== MODAL: CADASTRAR / EDITAR ===================== -->
+<!--
+     MODAL CADASTRAR / EDITAR (o mesmo formulário serve para os dois).
+     <dialog> é o elemento nativo de janela modal do HTML.
+     O "name" de cada campo coincide com a propriedade do JSON do back-end.
+-->
 <dialog id="modal-membro" aria-labelledby="titulo-modal">
     <form id="form-membro" novalidate>
         <header class="dialogo-cabecalho">
@@ -218,16 +272,29 @@
 
                 <div class="campo">
                     <label for="anoFormativo">Ano formativo <abbr title="obrigatório">*</abbr></label>
-                    <select id="anoFormativo" aria-required="true" aria-describedby="erro-anoFormativo">
+                    <!--
+                         ANO FORMATIVO: 1, 2 ou 0 (Concluído).
+                         [NOVO] a opção "Concluído (consagrado)" tem value="0".
+                         Quando a Etapa for "Consagrado", o app.js seleciona 0 sozinho e TRAVA este
+                         campo (disabled): o consagrado não responde, já concluiu todas as etapas.
+                    -->
+                    <select id="anoFormativo" aria-required="true" aria-describedby="dica-anoFormativo erro-anoFormativo">
                         <option value="">Selecione…</option>
+                        <option value="0">Concluído (consagrado)</option>
                         <option value="1">1º ano</option>
                         <option value="2">2º ano</option>
                     </select>
+                    <small class="dica-campo" id="dica-anoFormativo" hidden>Membro consagrado já concluiu todas as etapas: o ano formativo fica como Concluído.</small>
                     <span class="erro-campo" id="erro-anoFormativo"></span>
                 </div>
 
                 <div class="campo">
                     <label for="etapa">Etapa formativa <abbr title="obrigatório">*</abbr></label>
+                    <!--
+                         ETAPA FORMATIVA: é a que define se o membro é consagrado.
+                         Ao digitar/escolher uma etapa contendo "consagrad", o ano é travado em 0.
+                         O <datalist> sugere etapas já cadastradas.
+                    -->
                     <input type="text" id="etapa" list="sugestoes-etapa" maxlength="255" autocomplete="off" aria-required="true" aria-describedby="erro-etapa">
                     <datalist id="sugestoes-etapa"></datalist>
                     <span class="erro-campo" id="erro-etapa"></span>
@@ -270,6 +337,7 @@
 
 
 <!-- ===================== MODAL: DETALHES (GET /membros/{id}) ===================== -->
+<!-- MODAL DE DETALHES: mostra os dados de um membro (GET /membros/{id}), com botões Editar e Excluir. -->
 <dialog id="modal-detalhes" aria-labelledby="det-nome">
     <div class="dialogo-cabecalho">
         <div class="det-identidade">
@@ -297,6 +365,7 @@
 
 
 <!-- ===================== MODAL: CONFIRMAR EXCLUSÃO ===================== -->
+<!-- MODAL DE CONFIRMAÇÃO antes de excluir (substitui o confirm() do navegador). -->
 <dialog id="modal-confirmar" class="dialogo-pequeno" aria-labelledby="confirmar-titulo">
     <form method="dialog">
         <div class="dialogo-corpo confirmar-corpo">
@@ -314,8 +383,10 @@
 </dialog>
 
 <!-- Notificações (toasts) -->
+<!-- Local das notificações rápidas ("Membro cadastrado com sucesso!"). -->
 <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
+<!-- Carrega a lógica por último, quando todos os elementos acima já existem na página. -->
 <script src="/app.js"></script>
 </body>
 </html>

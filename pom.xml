@@ -1,11 +1,22 @@
-
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  =====================================================================
+  pom.xml  =  a "receita" do projeto para o Maven
+  =====================================================================
+  O Maven lê este arquivo para: baixar as bibliotecas (dependências),
+  compilar o código Java e empacotar o sistema. Nada aqui é lógica do
+  negócio; é só configuração da base do projeto.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 
+	<!--
+	  PROJETO PAI: herda do Spring Boot as versões compatíveis de todas as
+	  bibliotecas. Por isso as dependências abaixo não têm número de versão.
+	-->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
@@ -13,6 +24,7 @@
 		<relativePath/>
 	</parent>
 
+	<!-- IDENTIDADE do projeto (nome do pacote raiz e do artefato gerado) -->
 	<groupId>com.recado</groupId>
 	<artifactId>controle-membros</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -21,87 +33,100 @@
 	<description>API para controle de membros da Comunidade Recado</description>
 
 	<properties>
+		<!-- Versão do Java usada para compilar -->
 		<java.version>25</java.version>
 	</properties>
 
 	<dependencies>
 
-		<!-- Spring MVC / REST -->
+		<!-- Spring MVC / REST: permite criar os @RestController (/membros) e
+		     já traz o servidor web Tomcat embutido -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
-		<!-- JPA / Hibernate -->
+		<!-- JPA / Hibernate: mapeia a classe Membro para a tabela "membros" e
+		     fornece o JpaRepository (findAll, save, deleteById...) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 
-
+		<!-- Validação: habilita @Valid, @Min, @Max (usados na entidade Membro,
+		     inclusive na regra do ano formativo 0 a 2) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
-
-		<!-- Console web do H2 -->
+		<!-- Console web do H2 (só serve se o H2 for o banco; hoje o banco em
+		     uso é o PostgreSQL, então esta dependência está sem uso) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-h2console</artifactId>
 		</dependency>
 
-		<!-- Banco H2 -->
+		<!-- Banco H2 (em arquivo, sobra do início do projeto: ver pasta /data).
+		     Não é usado enquanto o application.properties apontar ao PostgreSQL -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Lombok -->
+		<!-- Lombok: gera getters/setters por anotação. Está configurado, mas a
+		     classe Membro hoje escreve os métodos à mão -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
 
-		<!-- Testes JPA -->
+		<!-- Ferramentas de teste da camada JPA (só no escopo de teste) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Testes MVC -->
+		<!-- Ferramentas de teste da camada web MVC (só no escopo de teste) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Driver do PostgreSQL: é ele que permite ao Java conversar com o
+		     banco real "ComunidadeRecado" -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
-
 	</dependencies>
 
 	<build>
 		<plugins>
 
+			<!-- Plugin do Spring Boot: permite rodar com "mvnw spring-boot:run"
+			     e gera o .jar executável -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 
+			<!-- Plugin do compilador: aqui só se avisa que o Lombok deve rodar
+			     durante a compilação (annotationProcessorPaths), tanto do código
+			     principal quanto dos testes -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 
 				<executions>
 
+					<!-- Compilação do código principal (src/main) -->
 					<execution>
 						<id>default-compile</id>
 						<phase>compile</phase>
@@ -119,6 +144,7 @@
 						</configuration>
 					</execution>
 
+					<!-- Compilação dos testes (src/test) -->
 					<execution>
 						<id>default-testCompile</id>
 						<phase>test-compile</phase>

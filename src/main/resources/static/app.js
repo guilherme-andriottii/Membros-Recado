@@ -12,6 +12,22 @@
      7. Navegação (rotas por hash) e eventos
      8. Inicialização
    ========================================================================= */
+// MODO ESTRITO: o JavaScript passa a acusar erros que normalmente ignoraria
+// (ex.: usar uma variável sem declará-la). Evita bugs silenciosos.
+//
+// BASE DESTE ARQUIVO: JavaScript puro (Vanilla JS), sem frameworks.
+// Fluxo geral do app:
+//    [estado]  ->  [renderização na tela]  ->  [ação do usuário (evento)]
+//         ^                                              |
+//         |                                              v
+//         +----------- atualiza ------------  [chamada à API (fetch)]
+//
+// REGRA DO ANO FORMATIVO (alteração pedida):
+//    0 = Concluído  (membro consagrado, já concluiu todas as etapas)
+//    1 = 1º ano     |  2 = 2º ano
+// Consagrado não responde o ano: o formulário trava o campo em "Concluído" e a
+// aba Membros exibe "Concluído". Procure por [NOVO] e [ALTERADO] neste arquivo
+// para ver cada trecho que mudou.
 "use strict";
 
 
@@ -32,14 +48,16 @@ const estado = {
     carregadoUmaVez: false,
     erro: null,                  // ApiError da última listagem (ou null)
     busca: "",
-    filtroAno: "todos",          // "todos" | "1" | "2"
+    filtroAno: "todos",          // "todos" | "0" | "1" | "2"   ([ALTERADO] 0 = concluído)
     ordem: { campo: "nome", direcao: "asc" },
     editandoId: null,            // null = cadastro (POST) | número = edição (PUT)
     salvando: false
 };
 
+// Atalho: $("nome") equivale a document.getElementById("nome").
 const $ = id => document.getElementById(id);
 
+// DOM EM CACHE: guarda as referências aos elementos da página (buscados UMA vez), para não repetir getElementById o tempo todo. As chaves seguem os ids do index.html.
 const dom = {
     navContador: $("nav-contador"),
     apiStatus: $("api-status"),
@@ -100,6 +118,17 @@ const ROTULOS = {
     casaMissao: "Casa de missão"
 };
 
+// [NOVO] ---------------- REGRA DO ANO FORMATIVO ----------------
+// Quem é consagrado já concluiu todas as etapas: não existe 1º nem 2º ano
+// para ele. Por isso o ano é 0, e a tela mostra "Concluído".
+// O mesmo valor 0 é aceito (e também forçado) pelo back-end (MembroService).
+const ANO_CONCLUIDO = 0;
+
+// [NOVO] Trecho que identifica a etapa "Consagrado/Consagrada". É comparado
+// SEM acento e em minúsculas. Se no seu banco a etapa tiver outro nome,
+// altere somente esta linha (e a constante igual no MembroService.java).
+const TRECHO_ETAPA_CONSAGRADO = "consagrad";
+
 
 /* =========================================================================
    2. CAMADA DE API — toda a comunicação HTTP com o backend Java
@@ -117,9 +146,11 @@ class ApiError extends Error {
 
 // Função central: envia a requisição, valida a resposta e devolve o JSON.
 async function requisitar(caminho = "", opcoes = {}) {
+    // AbortController + setTimeout = "timeout" manual: se o servidor não responder em 10 s, a requisição é cancelada (cai no catch como AbortError).
     const controlador = new AbortController();
     const temporizador = setTimeout(() => controlador.abort(), TEMPO_LIMITE_MS);
 
+    // Cabeçalhos HTTP: Accept = queremos JSON na resposta; o Content-Type só é enviado quando há corpo (POST/PUT).
     const cabecalhos = { Accept: "application/json" };
     if (opcoes.body !== undefined) {
         cabecalhos["Content-Type"] = "application/json";   // corpo é JSON
@@ -127,6 +158,7 @@ async function requisitar(caminho = "", opcoes = {}) {
 
     let resposta;
     try {
+        // fetch() dispara a requisição HTTP. O "await" pausa só ESTA função até a resposta chegar, sem travar a página.
         resposta = await fetch(`${API_URL}${caminho}`, {
             ...opcoes,
             headers: cabecalhos,
@@ -142,6 +174,7 @@ async function requisitar(caminho = "", opcoes = {}) {
         clearTimeout(temporizador);
     }
 
+    // resposta.ok é falso para status 4xx/5xx. Nesse caso viramos um ApiError com mensagem amigável.
     if (!resposta.ok) {
         throw await criarErroHttp(resposta);
     }
@@ -150,6 +183,7 @@ async function requisitar(caminho = "", opcoes = {}) {
     if (resposta.status === 204) {
         return null;
     }
+    // Converte o corpo da resposta (texto JSON) em objeto/array JavaScript.
     return resposta.json();
 }
 
@@ -241,6 +275,7 @@ const ICONES = {
     fechar: '<path d="M18 6 6 18M6 6l12 12"/>'
 };
 
+// Monta um <svg> a partir do nome em ICONES. createElementNS é necessário porque SVG usa outro "namespace" XML.
 function icone(nome) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
@@ -258,10 +293,12 @@ function normalizar(valor) {
         .trim();
 }
 
+// Garante texto: converte null/undefined em "" e remove espaços das pontas (trim).
 function textoLimpo(valor) {
     return String(valor ?? "").trim();
 }
 
+// Gera as iniciais do avatar: "Maria da Silva" -> "MS" (1ª letra do primeiro e do último nome).
 function iniciais(nome) {
     const partes = textoLimpo(nome).split(/\s+/).filter(Boolean);
     if (partes.length === 0) return "?";
@@ -270,6 +307,7 @@ function iniciais(nome) {
     return (primeira + ultima).toUpperCase();
 }
 
+// Cria o círculo com as iniciais (pequeno na tabela, grande no modal de detalhes).
 function avatar(nome, grande = false) {
     return el("span", { class: grande ? "avatar avatar-grande" : "avatar", "aria-hidden": "true", text: iniciais(nome) });
 }
@@ -280,12 +318,39 @@ function textoOuTraco(valor) {
     return texto ? el("span", { text: texto }) : el("span", { class: "vazio", text: "—" });
 }
 
+// [NOVO] true se a etapa indica "Consagrado/Consagrada".
+// Ex.: "Consagrado" -> true | "Noviciado" -> false | vazio -> false
+function ehConsagrado(etapa) {
+    return normalizar(etapa).includes(TRECHO_ETAPA_CONSAGRADO);
+}
+
+// [NOVO] Ano que deve ser EXIBIDO e CONTADO para o membro.
+// Se a etapa é "Consagrado", vale 0 (Concluído) mesmo que o banco ainda
+// guarde 1, 2 ou vazio (cadastros antigos). Assim a tela já fica correta
+// sem precisar corrigir os dados antigos. Caso contrário, usa o valor salvo.
+function anoEfetivo(membro) {
+    return ehConsagrado(membro.etapa) ? ANO_CONCLUIDO : membro.anoFormativo;
+}
+
+// [NOVO] Texto do ano para exibir e pesquisar: 0 -> "Concluído",
+// 1 -> "1º ano", 2 -> "2º ano". Qualquer outro valor -> "" (sem texto).
+function rotuloAno(ano) {
+    if (ano === ANO_CONCLUIDO) return "Concluído";
+    if (ano === 1 || ano === 2) return `${ano}º ano`;
+    return "";
+}
+
+// [ALTERADO] Chip (etiqueta) do ano. A classe CSS acompanha o número:
+// chip-ano-0 (verde, Concluído), chip-ano-1 (azul) e chip-ano-2 (dourado).
+// Antes só existiam 1 e 2; para o ano 0 aparecia "—".
 function chipAno(ano) {
-    return ano === 1 || ano === 2
-        ? el("span", { class: `chip chip-ano-${ano}`, text: `${ano}º ano` })
+    const rotulo = rotuloAno(ano);
+    return rotulo
+        ? el("span", { class: `chip chip-ano-${ano}`, text: rotulo })
         : el("span", { class: "vazio", text: "—" });
 }
 
+// Percentual inteiro; evita divisão por zero (total 0 -> 0%).
 function porcentagem(parte, total) {
     return total > 0 ? Math.round((parte / total) * 100) : 0;
 }
@@ -305,6 +370,7 @@ function avisar(mensagem, tipo = "sucesso") {
     setTimeout(remover, tipo === "erro" ? 7000 : 4000);
 }
 
+// Preenche uma caixa de alerta vermelha com ícone + texto e a torna visível.
 function mostrarAlerta(elemento, mensagem) {
     elemento.replaceChildren(icone("alerta"), el("p", { text: mensagem }));
     elemento.hidden = false;
@@ -338,6 +404,7 @@ async function carregarMembros({ silencioso = false } = {}) {
     }
 }
 
+// Redesenha todas as áreas da tela a partir de estado.membros. É chamada depois de cada carregamento.
 function renderizarTudo() {
     renderizarDashboard();
     renderizarTabela();
@@ -345,6 +412,7 @@ function renderizarTudo() {
     dom.navContador.textContent = estado.carregadoUmaVez ? estado.membros.length : "0";
 }
 
+// Atualiza a bolinha e o texto do rodapé do menu: "carregando" (amarelo), "online" (verde) ou "offline" (vermelho). A classe CSS é que muda a cor.
 function definirStatusApi(situacao, texto) {
     dom.apiStatus.className = `api-status ${situacao}`;
     dom.apiStatusTexto.textContent = texto;
@@ -377,8 +445,10 @@ function renderizarDashboard() {
     }
 
     const total = membros.length;
-    const primeiro = membros.filter(m => m.anoFormativo === 1).length;
-    const segundo = membros.filter(m => m.anoFormativo === 2).length;
+    // [ALTERADO] usa anoEfetivo(): consagrados (ano 0 = Concluído) NÃO são
+    // contados como 1º nem 2º ano; entram só no total de membros.
+    const primeiro = membros.filter(m => anoEfetivo(m) === 1).length;
+    const segundo = membros.filter(m => anoEfetivo(m) === 2).length;
 
     dom.statTotal.textContent = total;
     dom.statPrimeiro.textContent = primeiro;
@@ -392,6 +462,7 @@ function renderizarDashboard() {
     renderizarRecentes();
 }
 
+// Cria o botão "Tentar novamente", que refaz o GET /membros.
 function botaoTentarNovamente() {
     const botao = el("button", { type: "button", class: "btn btn-small" }, "Tentar novamente");
     botao.addEventListener("click", () => carregarMembros());
@@ -448,7 +519,7 @@ function renderizarRecentes() {
             el("span", { class: "recente-texto" },
                 el("strong", { text: membro.nome }),
                 el("small", { text: detalhe })),
-            chipAno(membro.anoFormativo)
+            chipAno(anoEfetivo(membro))   // [ALTERADO] mostra "Concluído" para consagrado
         );
         return el("li", {}, botao);
     }));
@@ -456,17 +527,24 @@ function renderizarRecentes() {
 
 /* ---------- Tabela ---------- */
 
+// [NOVO] Valor usado para ORDENAR cada coluna. Na coluna "anoFormativo"
+// usa o ano efetivo (Concluído = 0 fica antes do 1º e do 2º ano);
+// nas demais colunas usa o valor do próprio campo.
+function valorParaOrdenar(membro, campo) {
+    return campo === "anoFormativo" ? anoEfetivo(membro) : membro[campo];
+}
+
 // Aplica pesquisa + filtro de ano + ordenação sobre os dados reais.
 function obterMembrosVisiveis() {
     const termo = normalizar(estado.busca);
 
     const filtrados = estado.membros.filter(membro => {
-        if (estado.filtroAno !== "todos" && String(membro.anoFormativo) !== estado.filtroAno) {
+        if (estado.filtroAno !== "todos" && String(anoEfetivo(membro)) !== estado.filtroAno) {
             return false;
         }
         if (!termo) return true;
         return [membro.nome, membro.cidade, membro.ministerio, membro.etapa, membro.casaMissao,
-            membro.anoFormativo ? `${membro.anoFormativo}º ano` : ""]
+            rotuloAno(anoEfetivo(membro))]   // [ALTERADO] pesquisar "concluido" encontra os consagrados
             .some(valor => normalizar(valor).includes(termo));
     });
 
@@ -474,8 +552,8 @@ function obterMembrosVisiveis() {
     const sinal = direcao === "asc" ? 1 : -1;
 
     return filtrados.sort((a, b) => {
-        const va = a[campo];
-        const vb = b[campo];
+        const va = valorParaOrdenar(a, campo);   // [ALTERADO]
+        const vb = valorParaOrdenar(b, campo);   // [ALTERADO]
         const vazioA = va === null || va === undefined || va === "";
         const vazioB = vb === null || vb === undefined || vb === "";
         if (vazioA && vazioB) return 0;
@@ -486,6 +564,7 @@ function obterMembrosVisiveis() {
     });
 }
 
+// Decide o que mostrar na tabela em 4 situações: carregando (esqueleto), erro sem dados, lista vazia / sem resultado, ou a lista de membros já filtrada e ordenada.
 function renderizarTabela() {
     // Estado 1: carregando pela primeira vez -> esqueleto
     if (estado.carregando && !estado.carregadoUmaVez) {
@@ -533,6 +612,7 @@ function renderizarTabela() {
     dom.corpoTabela.replaceChildren(...visiveis.map(criarLinha));
 }
 
+// Monta UMA linha <tr> da tabela para um membro. A coluna "Ano" mostra o chip (1º ano / 2º ano / Concluído).
 function criarLinha(membro) {
     const nome = textoLimpo(membro.nome) || "(sem nome)";
     const botao = (acao, classe, rotulo) => el("button", {
@@ -548,7 +628,7 @@ function criarLinha(membro) {
         celula("Nome", el("div", { class: "membro-nome" },
             avatar(nome),
             el("div", {}, el("strong", { text: nome }), el("small", { text: `ID ${membro.id}` })))),
-        celula("Ano", chipAno(membro.anoFormativo)),
+        celula("Ano", chipAno(anoEfetivo(membro))),   // [ALTERADO] coluna Ano: 1º ano / 2º ano / Concluído
         celula("Cidade", textoOuTraco(membro.cidade)),
         celula("Ministério", textoOuTraco(membro.ministerio)),
         celula("Etapa", textoOuTraco(membro.etapa)),
@@ -565,11 +645,13 @@ function celula(rotulo, conteudo, classe = "") {
     return el("td", { "data-label": rotulo, class: classe }, conteudo);
 }
 
+// Linha "fantasma" cinza animada, exibida enquanto os dados carregam.
 function linhaEsqueleto() {
     return el("tr", { class: "esqueleto", "aria-hidden": "true" },
         ...Array.from({ length: 7 }, () => el("td", {}, el("span", { class: "esqueleto-barra" }))));
 }
 
+// Linha única usada para mensagens: lista vazia, nada encontrado ou erro ao carregar (com botão de ação).
 function linhaEstado(nomeIcone, titulo, texto, rotuloBotao, aoClicar) {
     const botao = el("button", { type: "button", class: "btn btn-small" }, rotuloBotao);
     botao.addEventListener("click", aoClicar);
@@ -603,6 +685,7 @@ function renderizarSugestoes() {
     }
 }
 
+// Zera a pesquisa e o filtro de ano e redesenha a tabela.
 function limparFiltros() {
     estado.busca = "";
     estado.filtroAno = "todos";
@@ -611,6 +694,7 @@ function limparFiltros() {
     renderizarTabela();
 }
 
+// Sincroniza a aparência: mostra/oculta o X da pesquisa e destaca o botão de ano ativo (aria-pressed). Funciona também para o botão "Concluído" (data-ano="0").
 function atualizarFiltrosVisuais() {
     dom.limparPesquisa.hidden = estado.busca === "";
     dom.filtrosAno.querySelectorAll("button").forEach(botao => {
@@ -623,6 +707,7 @@ function atualizarFiltrosVisuais() {
    5. FORMULÁRIO — cadastro (POST) e edição (PUT) no mesmo modal
    ========================================================================= */
 
+// Abre o modal vazio para CADASTRAR (estado.editandoId = null -> ao salvar será POST).
 function abrirCadastro() {
     estado.editandoId = null;
     dom.form.reset();
@@ -633,6 +718,7 @@ function abrirCadastro() {
     dom.tituloModal.textContent = "Novo membro";
     dom.subtituloModal.textContent = "Cadastro de um novo membro (POST /membros).";
     dom.salvarTexto.textContent = "Cadastrar membro";
+    sincronizarAnoComEtapa();   // [NOVO] garante o campo Ano destravado/limpo num cadastro novo
 
     dom.dlgForm.showModal();
     $("nome").focus();
@@ -650,8 +736,9 @@ async function abrirEdicao(id) {
         limparErros();
 
         for (const campo of CAMPOS) {
-            $(campo).value = membro[campo] ?? "";
+            $(campo).value = membro[campo] ?? "";   // "??" mantém o 0 (não vira vazio)
         }
+        sincronizarAnoComEtapa();   // [NOVO] se a etapa é "Consagrado", trava o ano em 0
 
         dom.chipHttp.textContent = "PUT";
         dom.chipHttp.className = "chip-http chip-put";
@@ -682,12 +769,39 @@ function lerFormulario() {
     };
 }
 
-// Regras espelhando o backend: nome e etapa são obrigatórios (nullable=false);
-// ano formativo deve ser 1 ou 2 (@Min(1) @Max(2)).
+// [NOVO] ---------------------------------------------------------------
+// SINCRONIZA O CAMPO "ANO FORMATIVO" COM A "ETAPA".
+// É aqui que o consagrado "não pode responder" o ano:
+//  - etapa "Consagrado" -> seleciona "Concluído" (0), TRAVA o campo
+//    (disabled) e mostra a dica explicando o motivo;
+//  - qualquer outra etapa -> campo livre. Se estava travado, volta para
+//    "Selecione…" para a pessoa escolher o ano de novo.
+// É chamada ao abrir o formulário e a cada vez que a etapa é digitada.
+// -----------------------------------------------------------------------
+function sincronizarAnoComEtapa() {
+    const campoAno = $("anoFormativo");
+    const consagrado = ehConsagrado($("etapa").value);
+
+    if (consagrado) {
+        campoAno.value = String(ANO_CONCLUIDO);
+        campoAno.disabled = true;
+        $("erro-anoFormativo").textContent = "";          // apaga erro antigo do campo
+        campoAno.removeAttribute("aria-invalid");
+    } else {
+        if (campoAno.disabled) campoAno.value = "";        // estava travado: limpa a escolha
+        campoAno.disabled = false;
+    }
+
+    $("dica-anoFormativo").hidden = !consagrado;           // mostra/oculta a dica verde
+}
+
+// [ALTERADO] Regras espelhando o backend: nome e etapa são obrigatórios (nullable=false);
+// ano formativo deve ser 0 (concluído), 1 ou 2 (@Min(0) @Max(2)).
 function validar(dados) {
     const erros = {};
     if (!dados.nome) erros.nome = "Informe o nome do membro.";
-    if (dados.anoFormativo !== 1 && dados.anoFormativo !== 2) erros.anoFormativo = "Selecione o 1º ou o 2º ano formativo.";
+    // [ALTERADO] 0 (Concluído) agora é válido. Antes só 1 e 2 passavam.
+    if (![ANO_CONCLUIDO, 1, 2].includes(dados.anoFormativo)) erros.anoFormativo = "Selecione o ano formativo (1º ano, 2º ano ou Concluído).";
     if (!dados.etapa) erros.etapa = "Informe a etapa formativa.";
 
     for (const campo of ["nome", "cidade", "ministerio", "etapa", "casaMissao"]) {
@@ -698,11 +812,13 @@ function validar(dados) {
     return erros;
 }
 
+// Escreve a mensagem abaixo do campo e o marca como inválido (borda vermelha via aria-invalid).
 function mostrarErroCampo(campo, mensagem) {
     $(`erro-${campo}`).textContent = mensagem;
     $(campo).setAttribute("aria-invalid", "true");
 }
 
+// Remove todas as mensagens de erro do formulário.
 function limparErros() {
     for (const campo of CAMPOS) {
         $(`erro-${campo}`).textContent = "";
@@ -711,12 +827,14 @@ function limparErros() {
     dom.erroForm.hidden = true;
 }
 
+// Trava o botão Salvar (evita clique duplo) e mostra a rodinha enquanto a requisição está em andamento.
 function definirSalvando(salvando) {
     estado.salvando = salvando;
     dom.btnSalvar.disabled = salvando;
     dom.btnSalvar.classList.toggle("carregando", salvando);
 }
 
+// Fluxo do botão Salvar: evita recarregar a página, valida, decide POST (novo) ou PUT (editando), fecha o modal, avisa e recarrega a lista.
 async function salvarMembro(evento) {
     evento.preventDefault();
     if (estado.salvando) return;
@@ -761,6 +879,7 @@ async function salvarMembro(evento) {
     }
 }
 
+// Impede fechar o modal enquanto uma gravação está em andamento.
 function fecharFormulario() {
     if (!estado.salvando) dom.dlgForm.close();
 }
@@ -770,6 +889,7 @@ function fecharFormulario() {
    6. DETALHES (GET /membros/{id}) E EXCLUSÃO (DELETE /membros/{id})
    ========================================================================= */
 
+// Abre o modal de detalhes: faz GET /membros/{id} para exibir os dados mais atuais do banco.
 async function abrirDetalhes(id) {
     document.body.classList.add("aguardando");
     try {
@@ -781,7 +901,7 @@ async function abrirDetalhes(id) {
         dom.dlgDetalhes.dataset.id = membro.id;
 
         dom.detCampos.replaceChildren(...[
-            ["Ano formativo", membro.anoFormativo ? `${membro.anoFormativo}º ano` : ""],
+            ["Ano formativo", rotuloAno(anoEfetivo(membro))],   // [ALTERADO] mostra "Concluído" para consagrado
             ["Etapa formativa", membro.etapa],
             ["Cidade", membro.cidade],
             ["Ministério", membro.ministerio],
@@ -810,6 +930,7 @@ function confirmar(mensagem) {
     });
 }
 
+// Fluxo de exclusão: pede confirmação -> DELETE /membros/{id} -> avisa -> recarrega a lista.
 async function excluirMembro(id) {
     const membro = estado.membros.find(item => item.id === Number(id));
     const nome = membro ? textoLimpo(membro.nome) : `#${id}`;
@@ -836,6 +957,7 @@ async function excluirMembro(id) {
    7. NAVEGAÇÃO E EVENTOS
    ========================================================================= */
 
+// As "abas" do sistema e os títulos mostrados no topo.
 const PAGINAS = {
     dashboard: { titulo: "Dashboard", subtitulo: "Visão geral da Comunidade Recado" },
     membros: { titulo: "Membros", subtitulo: "Cadastre, consulte, edite e exclua membros" }
@@ -878,6 +1000,7 @@ function fecharAoClicarFora(dialogo, aoFechar) {
     });
 }
 
+// Liga cada elemento da tela ao seu comportamento (addEventListener). É chamada uma única vez, na inicialização.
 function registrarEventos() {
     window.addEventListener("hashchange", navegar);
 
@@ -898,6 +1021,7 @@ function registrarEventos() {
         renderizarTabela();
         dom.pesquisa.focus();
     });
+    // Filtro por ano: lê data-ano do botão clicado ("todos", "1", "2" ou, [NOVO], "0" = Concluído) e guarda em estado.filtroAno.
     dom.filtrosAno.addEventListener("click", evento => {
         const botao = evento.target.closest("button[data-ano]");
         if (!botao) return;
@@ -937,6 +1061,10 @@ function registrarEventos() {
         });
     }
 
+    // [NOVO] Ao digitar ou escolher a etapa, o campo Ano é recalculado na hora
+    // ("Consagrado" trava em Concluído; outra etapa destrava).
+    $("etapa").addEventListener("input", sincronizarAnoComEtapa);
+
     // Detalhes
     $("det-fechar-x").addEventListener("click", () => dom.dlgDetalhes.close());
     fecharAoClicarFora(dom.dlgDetalhes);
@@ -960,6 +1088,7 @@ function registrarEventos() {
    8. INICIALIZAÇÃO
    ========================================================================= */
 
+// Ordem de partida: liga os eventos, marca a seta de ordenação, mostra a aba da URL e busca os membros na API.
 registrarEventos();
 renderizarCabecalhoOrdenacao();
 navegar();

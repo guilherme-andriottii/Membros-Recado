@@ -15,6 +15,10 @@
 
 
 /* ============================== 1. TOKENS ============================== */
+/*
+   VARIÁVEIS CSS (custom properties): definidas UMA vez aqui e usadas em todo o
+   arquivo com var(--nome). Para trocar uma cor do site inteiro, mude só aqui.
+*/
 :root {
     /* Paleta oficial */
     --azul: #2878b8;
@@ -52,10 +56,13 @@
 
 
 /* ========================= 2. BASE E ACESSIBILIDADE ========================= */
+/* border-box: padding e borda ficam DENTRO da largura declarada (facilita calcular o layout). */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Impede o celular de aumentar o texto sozinho ao girar a tela. */
 html { -webkit-text-size-adjust: 100%; }
 
+/* Estilo base de todo o site: fundo, cor e fonte do texto. */
 body {
     margin: 0;
     background: var(--fundo);
@@ -66,14 +73,19 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Cursor de "carregando" quando o app.js coloca a classe "aguardando" no body (durante uma requisição). */
 body.aguardando, body.aguardando * { cursor: progress !important; }
+/* Com um modal aberto, trava a rolagem da página que está atrás. */
 body:has(dialog[open]) { overflow: hidden; }
 
+/* Zera as margens padrão do navegador; o espaçamento é definido nos componentes. */
 h1, h2, h3, p { margin: 0; }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
+/* Garante que elementos com o atributo hidden sumam de verdade (o app.js usa isso para trocar de aba e mostrar/ocultar alertas). */
 [hidden] { display: none !important; }
 
+/* Ícones SVG: tamanho padrão, sem preenchimento, contorno na cor do texto (currentColor). */
 svg {
     width: 20px;
     height: 20px;
@@ -85,11 +97,13 @@ svg {
     stroke-linejoin: round;
 }
 
+/* Contorno azul visível ao navegar pelo teclado (acessibilidade). */
 :focus-visible {
     outline: 3px solid rgba(40, 120, 184, .45);
     outline-offset: 2px;
 }
 
+/* Link "Ir para o conteúdo": fica fora da tela e aparece quando recebe foco do teclado. */
 .skip-link {
     position: absolute;
     left: 12px;
@@ -105,6 +119,7 @@ svg {
 
 
 /* ============================ 3. LAYOUT ============================ */
+/* LAYOUT PRINCIPAL em grid de 2 colunas: menu lateral (largura fixa) + conteúdo (o resto). */
 .app {
     display: grid;
     grid-template-columns: var(--largura-menu) minmax(0, 1fr);
@@ -113,6 +128,7 @@ svg {
 }
 
 /* ---- Menu lateral ---- */
+/* Menu lateral azul: fica fixo na tela (sticky), com fundo em degradê e brilho dourado no canto. */
 .sidebar {
     position: sticky;
     top: 0;
@@ -128,6 +144,7 @@ svg {
             linear-gradient(180deg, var(--azul-escuro), var(--azul-profundo));
 }
 
+/* Bloco da logo + nome da comunidade, no topo do menu. */
 .brand {
     display: flex;
     align-items: center;
@@ -150,12 +167,15 @@ svg {
 }
 .brand-logo img { width: 100%; height: 100%; object-fit: contain; }
 
+/* Textos ao lado da logo: nome em branco e subtítulo em dourado. */
 .brand-text { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
 .brand-text strong { font-size: 16px; letter-spacing: .2px; }
 .brand-text span { font-size: 12.5px; color: var(--dourado); }
 
+/* Lista de links do menu, um embaixo do outro. */
 .nav { display: flex; flex-direction: column; gap: 6px; }
 
+/* Cada link do menu (Dashboard, Membros). */
 .nav-link {
     position: relative;
     display: flex;
@@ -168,6 +188,7 @@ svg {
     border-radius: 10px;
     transition: background .15s, color .15s;
 }
+/* Destaque ao passar o mouse e na página atual (aria-current="page", definido pelo app.js); a faixa dourada fica à esquerda. */
 .nav-link:hover { background: rgba(255, 255, 255, .09); color: #fff; }
 .nav-link[aria-current="page"] { background: rgba(255, 255, 255, .14); color: #fff; }
 .nav-link[aria-current="page"]::before {
@@ -182,6 +203,7 @@ svg {
 }
 .nav-link:focus-visible { outline-color: var(--dourado); }
 
+/* "Selo" dourado com o total de membros. */
 .nav-badge {
     margin-left: auto;
     min-width: 26px;
@@ -194,8 +216,10 @@ svg {
     border-radius: 999px;
 }
 
+/* margin-top:auto empurra o indicador da API para o fim (rodapé) do menu. */
 .sidebar-footer { margin-top: auto; }
 
+/* Indicador de conexão com a API: a bolinha muda de cor conforme a classe (online / offline / carregando) aplicada pelo app.js. */
 .api-status {
     display: flex;
     align-items: center;
@@ -212,8 +236,10 @@ svg {
 .api-status.carregando .api-dot { background: var(--dourado); animation: pulsar 1s ease-in-out infinite; }
 
 /* ---- Área principal ---- */
+/* Área principal: as margens laterais crescem junto com a tela (clamp). */
 .main { min-width: 0; padding: 28px clamp(18px, 3.2vw, 44px) 56px; }
 
+/* Topo da página: título à esquerda e botão Atualizar à direita. */
 .topbar {
     display: flex;
     align-items: center;
@@ -224,6 +250,7 @@ svg {
 .topbar h1 { font-size: clamp(24px, 3vw, 30px); line-height: 1.15; color: var(--azul-escuro); letter-spacing: -.3px; }
 .topbar p { margin-top: 4px; color: var(--texto-suave); }
 
+/* Cada aba aparece com uma pequena animação de entrada. */
 .pagina { animation: entrar .28s ease both; }
 #conteudo:focus { outline: none; }
 
@@ -231,6 +258,7 @@ svg {
 /* ============================ 4. COMPONENTES ============================ */
 
 /* ---- Botões ---- */
+/* BOTÃO BASE: formato comum a todos; as variações abaixo (.btn-primary, .btn-gold...) só trocam as cores. */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -247,6 +275,7 @@ svg {
 .btn:disabled { opacity: .6; cursor: not-allowed; }
 .btn svg { width: 18px; height: 18px; }
 
+/* Variações: primary (azul, ação principal), gold (dourado, destaque), ghost (só contorno), danger (vermelho, excluir) e small (pequeno). */
 .btn-primary { color: #fff; background: var(--azul); box-shadow: 0 2px 6px rgba(40, 120, 184, .3); }
 .btn-primary:hover:not(:disabled) { background: var(--azul-hover); }
 
@@ -265,8 +294,10 @@ svg {
 .btn-small { padding: 7px 14px; font-size: 13.5px; color: var(--azul-escuro); background: var(--branco); border-color: var(--borda-forte); }
 .btn-small:hover { background: var(--azul-claro); }
 
+/* O ícone do botão Atualizar gira enquanto os dados carregam (botão fica disabled). */
 #btn-atualizar:disabled svg { animation: girar .9s linear infinite; }
 
+/* Botões quadrados só com ícone (ver / editar / excluir) das linhas da tabela. */
 .btn-icone {
     display: inline-grid;
     place-items: center;
@@ -284,6 +315,7 @@ svg {
 .btn-icone.perigo:hover { background: var(--perigo-claro); }
 
 /* ---- Chips ---- */
+/* CHIP = etiqueta arredondada. É assim que o ano formativo aparece na tabela (1º ano, 2º ano, Concluído). */
 .chip {
     display: inline-block;
     padding: 3px 11px;
@@ -292,11 +324,16 @@ svg {
     white-space: nowrap;
     border-radius: 999px;
 }
+/* Cores por ano: 1º ano = azul, 2º ano = dourado (e, abaixo, Concluído = verde). A classe vem do app.js: chip-ano-0, chip-ano-1 ou chip-ano-2. */
 .chip-ano-1 { color: var(--azul-escuro); background: var(--azul-claro); border: 1px solid #cfe5f8; }
 .chip-ano-2 { color: var(--dourado-texto); background: var(--dourado-claro); border: 1px solid #efdcae; }
+/* [NOVO] ano 0 = "Concluído" (consagrado): chip verde, a cor de "sucesso" do sistema. */
+.chip-ano-0 { color: #0f6b44; background: var(--sucesso-claro); border: 1px solid #bfe6d2; }
 
+/* Traço "—" exibido quando o campo está vazio. */
 .vazio { color: #8fa1b1; }
 
+/* Etiqueta com o método HTTP mostrada nos modais (GET, POST, PUT), cada uma com sua cor. */
 .chip-http {
     display: inline-block;
     margin-bottom: 6px;
@@ -310,6 +347,7 @@ svg {
 .chip-get { color: var(--azul-escuro); background: var(--azul-claro); }
 
 /* ---- Avatar com iniciais ---- */
+/* Círculo com as iniciais do nome da pessoa. */
 .avatar {
     display: inline-grid;
     place-items: center;
@@ -326,6 +364,7 @@ svg {
 .avatar-grande { width: 56px; height: 56px; font-size: 19px; border: 2px solid var(--dourado); }
 
 /* ---- Alertas ---- */
+/* Caixas de aviso; .alerta-erro é a versão vermelha. */
 .alerta {
     display: flex;
     align-items: center;
@@ -340,6 +379,7 @@ svg {
 
 
 /* ============================ 5. DASHBOARD ============================ */
+/* Faixa de boas-vindas do dashboard (degradê azul com brilho dourado). */
 .hero {
     display: flex;
     align-items: center;
@@ -370,6 +410,7 @@ svg {
 .hero p { margin-top: 8px; max-width: 52ch; color: rgba(255, 255, 255, .86); }
 .hero .btn { flex-shrink: 0; }
 
+/* Grade dos 3 cartões de números (3 colunas; reduz nas telas menores). */
 .stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -377,6 +418,7 @@ svg {
     margin-bottom: 22px;
 }
 
+/* Cartão branco com sombra que sobe um pouco ao passar o mouse. */
 .stat-card {
     padding: 22px;
     background: var(--branco);
@@ -387,14 +429,17 @@ svg {
 }
 .stat-card:hover { box-shadow: var(--sombra-2); transform: translateY(-2px); }
 
+/* Ícone + título no topo do cartão. */
 .stat-topo { display: flex; align-items: center; gap: 12px; }
 .stat-topo h3 { font-size: 14px; font-weight: 600; color: var(--texto-suave); }
 
+/* Quadrado colorido que guarda o ícone do cartão. */
 .stat-icone { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; }
 .stat-icone.azul { color: var(--azul); background: var(--azul-claro); }
 .stat-icone.dourado { color: var(--dourado-texto); background: var(--dourado-claro); }
 .stat-icone.escuro { color: #fff; background: var(--azul-escuro); }
 
+/* Número grande do cartão (total, 1º ano, 2º ano). */
 .stat-valor {
     margin-top: 16px;
     font-size: 40px;
@@ -406,13 +451,16 @@ svg {
 }
 .stat-legenda { margin-top: 10px; font-size: 13px; color: var(--texto-suave); }
 
+/* Barra de porcentagem: o app.js define a largura do <span> interno (ex.: width: 40%). O 3º cartão usa azul; o 2º usa dourado. */
 .barra { margin-top: 14px; height: 7px; overflow: hidden; background: var(--azul-claro); border-radius: 999px; }
 .barra span { display: block; height: 100%; width: 0; background: var(--dourado); border-radius: inherit; transition: width .6s ease; }
 .stat-card:nth-child(3) .barra span { background: var(--azul); }
 .stat-card .barra + .stat-legenda { margin-top: 8px; }
 
+/* Dois painéis lado a lado (ranking de ministérios e cadastros recentes). */
 .paineis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 
+/* Painel branco (caixa) com borda e sombra. */
 .painel {
     padding: 22px;
     background: var(--branco);
@@ -427,6 +475,7 @@ svg {
 .painel ul { margin: 0; padding: 0; list-style: none; }
 .painel-vazio { padding: 18px 0; color: var(--texto-suave); text-align: center; }
 
+/* Ranking de ministérios: cada linha tem 3 colunas: nome | barra | quantidade. */
 .barras { display: grid; gap: 14px; }
 .barras li { display: grid; grid-template-columns: minmax(80px, 30%) 1fr 28px; align-items: center; gap: 12px; }
 .barras-nome { overflow: hidden; font-weight: 500; white-space: nowrap; text-overflow: ellipsis; }
@@ -434,6 +483,7 @@ svg {
 .barras-preenchimento { display: block; height: 100%; background: linear-gradient(90deg, var(--azul), var(--azul-escuro)); border-radius: inherit; }
 .barras-valor { font-weight: 700; text-align: right; color: var(--azul-escuro); font-variant-numeric: tabular-nums; }
 
+/* Cadastros recentes: cada item é um botão clicável que abre os detalhes do membro. */
 .recentes { display: grid; gap: 4px; }
 .recentes button {
     display: flex;
@@ -454,6 +504,7 @@ svg {
 
 
 /* ========================= 6. LISTA DE MEMBROS ========================= */
+/* Cabeçalho da aba Membros: título + botão "Novo membro". */
 .secao-cabecalho {
     display: flex;
     align-items: center;
@@ -464,8 +515,10 @@ svg {
 .secao-cabecalho h2 { font-size: 20px; color: var(--azul-escuro); }
 .secao-cabecalho p { margin-top: 2px; color: var(--texto-suave); }
 
+/* Linha com pesquisa e filtros (quebra para a linha de baixo se faltar espaço). */
 .barra-ferramentas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 
+/* Campo de pesquisa: lupa à esquerda e botão limpar (X) à direita, posicionados sobre o input. */
 .campo-busca { position: relative; flex: 1 1 320px; }
 .campo-busca > svg { position: absolute; left: 14px; top: 50%; translate: 0 -50%; color: var(--texto-suave); pointer-events: none; }
 .campo-busca input {
@@ -497,6 +550,7 @@ svg {
 .limpar:hover { background: var(--azul-claro); }
 .limpar svg { width: 16px; height: 16px; }
 
+/* Grupo de botões do filtro de ano (Todos / 1º / 2º / Concluído). O botão ativo (aria-pressed="true") fica azul-escuro. */
 .filtros { display: inline-flex; padding: 4px; background: var(--branco); border: 1px solid var(--borda-forte); border-radius: var(--raio); box-shadow: var(--sombra-1); }
 .filtros button {
     padding: 8px 16px;
@@ -510,8 +564,10 @@ svg {
 .filtros button:hover { color: var(--azul-escuro); }
 .filtros button[aria-pressed="true"] { color: #fff; background: var(--azul-escuro); }
 
+/* Texto "Exibindo X de Y membros". */
 .contador { min-height: 22px; margin: 14px 2px 10px; font-size: 13.5px; color: var(--texto-suave); }
 
+/* Moldura da tabela; ganha rolagem horizontal se as colunas não couberem. */
 .tabela-wrapper {
     overflow-x: auto;
     background: var(--branco);
@@ -520,13 +576,16 @@ svg {
     box-shadow: var(--sombra-1);
 }
 
+/* A tabela ocupa toda a largura, sem espaço entre as células. */
 table { width: 100%; border-collapse: collapse; text-align: left; }
 
+/* Cabeçalho da tabela; a coluna ordenada no momento fica destacada (aria-sort). */
 thead th { background: #f1f7fc; border-bottom: 1px solid var(--borda); white-space: nowrap; }
 th[aria-sort="ascending"], th[aria-sort="descending"] { background: var(--azul-claro); }
 .col-acoes { text-align: right; }
 thead th.col-acoes { padding: 0 18px; font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--azul-escuro); }
 
+/* Botão dentro do cabeçalho. O ::after desenha a seta (↕ neutro, ↑ crescente, ↓ decrescente) conforme o aria-sort. */
 .ordenar {
     display: inline-flex;
     align-items: center;
@@ -547,14 +606,17 @@ th[aria-sort="ascending"] .ordenar::after { content: "↑"; opacity: 1; }
 th[aria-sort="descending"] .ordenar::after { content: "↓"; opacity: 1; }
 .ordenar:hover { background: rgba(40, 120, 184, .08); }
 
+/* Células das linhas da tabela. */
 tbody td { padding: 13px 18px; vertical-align: middle; border-bottom: 1px solid var(--borda); }
 tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover:not(.esqueleto):not(.linha-estado) { background: #f8fbfe; }
 
+/* Célula do nome: avatar + nome + ID. */
 .membro-nome { display: flex; align-items: center; gap: 12px; min-width: 190px; }
 .membro-nome strong { display: block; font-weight: 600; line-height: 1.25; }
 .membro-nome small { color: var(--texto-suave); font-size: 12px; }
 
+/* Botões ver / editar / excluir alinhados à direita. */
 .acoes { display: flex; justify-content: flex-end; gap: 2px; }
 
 /* Esqueleto de carregamento */
@@ -576,6 +638,7 @@ tbody tr:hover:not(.esqueleto):not(.linha-estado) { background: #f8fbfe; }
 
 
 /* ================= 7. DIÁLOGOS, FORMULÁRIO E AVISOS ================= */
+/* MODAIS: estilo comum a todos os <dialog> (caixa branca com faixa dourada no topo). */
 dialog {
     width: min(640px, calc(100% - 28px));
     max-height: calc(100dvh - 28px);
@@ -587,12 +650,16 @@ dialog {
     border-radius: var(--raio-g);
     box-shadow: var(--sombra-3);
 }
+/* Só quando está aberto vira flex (rodapé fixo e corpo com rolagem). ::backdrop é o fundo escurecido atrás do modal. */
 dialog[open] { display: flex; flex-direction: column; animation: surgir .22s ease both; }
 dialog::backdrop { background: rgba(10, 30, 50, .55); backdrop-filter: blur(3px); animation: esmaecer .2s ease both; }
+/* Versão mais estreita do modal (confirmação de exclusão). */
 .dialogo-pequeno { width: min(440px, calc(100% - 28px)); }
 
+/* Organiza o formulário em coluna: cabeçalho, corpo (que rola) e rodapé. */
 #form-membro, #modal-confirmar form { display: flex; flex: 1; flex-direction: column; min-height: 0; }
 
+/* Cabeçalho do modal (título, subtítulo e botão fechar). */
 .dialogo-cabecalho {
     display: flex;
     align-items: flex-start;
@@ -604,6 +671,7 @@ dialog::backdrop { background: rgba(10, 30, 50, .55); backdrop-filter: blur(3px)
 .dialogo-cabecalho p { margin-top: 4px; font-size: 13.5px; color: var(--texto-suave); }
 .det-identidade { display: flex; align-items: center; gap: 16px; }
 
+/* Botão X redondo para fechar o modal. */
 .icone-fechar {
     display: grid;
     place-items: center;
@@ -617,7 +685,9 @@ dialog::backdrop { background: rgba(10, 30, 50, .55); backdrop-filter: blur(3px)
 }
 .icone-fechar:hover { background: var(--azul-claro); color: var(--azul-escuro); }
 
+/* Corpo do modal: ocupa o espaço disponível e rola se o conteúdo for grande. */
 .dialogo-corpo { flex: 1; min-height: 0; padding: 14px 24px 8px; overflow-y: auto; }
+/* Rodapé do modal onde ficam os botões (Cancelar / Salvar...). */
 .dialogo-rodape {
     display: flex;
     justify-content: flex-end;
@@ -629,12 +699,14 @@ dialog::backdrop { background: rgba(10, 30, 50, .55); backdrop-filter: blur(3px)
 #modal-detalhes .dialogo-rodape { justify-content: space-between; }
 
 /* ---- Formulário ---- */
+/* Formulário em 2 colunas; .campo-largo ocupa a linha inteira. */
 .grade-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
 .campo { display: flex; flex-direction: column; gap: 6px; }
 .campo-largo { grid-column: 1 / -1; }
 .campo label { font-size: 13.5px; font-weight: 600; color: var(--azul-escuro); }
 .campo abbr, .nota-form abbr { color: var(--perigo); text-decoration: none; }
 
+/* Aparência dos campos de formulário. Abaixo: hover, foco (azul) e erro (aria-invalid="true" deixa a borda vermelha). */
 .campo input, .campo select {
     width: 100%;
     height: 44px;
@@ -649,17 +721,24 @@ dialog::backdrop { background: rgba(10, 30, 50, .55); backdrop-filter: blur(3px)
 .campo [aria-invalid="true"] { border-color: var(--perigo); background: #fffafa; }
 .campo [aria-invalid="true"]:focus { box-shadow: 0 0 0 4px rgba(179, 55, 47, .15); }
 
+/* Mensagem de erro abaixo do campo (some sozinha quando está vazia). */
 .erro-campo { min-height: 0; font-size: 12.5px; color: var(--perigo); }
 .erro-campo:empty { display: none; }
 .nota-form { margin-top: 14px; font-size: 12.5px; color: var(--texto-suave); }
+/* [NOVO] Dica sob o campo Ano formativo (aparece quando o consagrado tem o ano travado em 0). */
+.dica-campo { font-size: 12.5px; color: var(--sucesso); }
+/* [NOVO] Campo travado (disabled): aparência "apagada" e cursor de proibido. */
+.campo input:disabled, .campo select:disabled { color: var(--texto-suave); background: var(--fundo); cursor: not-allowed; }
 
 /* ---- Detalhes ---- */
+/* Modal de detalhes: grade de "cartinhas" (dt = rótulo, dd = valor). */
 .detalhes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
 .detalhes > div { padding: 14px 16px; background: var(--fundo); border: 1px solid var(--borda); border-radius: var(--raio); }
 .detalhes dt { font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--texto-suave); }
 .detalhes dd { margin: 4px 0 0; font-weight: 600; overflow-wrap: anywhere; }
 
 /* ---- Confirmação ---- */
+/* Modal de exclusão: conteúdo centralizado com ícone de lixeira vermelho. */
 .confirmar-corpo { display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 28px; text-align: center; }
 .confirmar-corpo h2 { font-size: 20px; color: var(--azul-escuro); }
 .confirmar-corpo p { color: var(--texto-suave); overflow-wrap: anywhere; }
@@ -667,10 +746,12 @@ dialog::backdrop { background: rgba(10, 30, 50, .55); backdrop-filter: blur(3px)
 .confirmar-icone svg { width: 26px; height: 26px; }
 
 /* ---- Botão de salvar com carregamento ---- */
+/* Rodinha do botão Salvar: fica oculta e só aparece quando o botão recebe a classe "carregando". */
 .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, .45); border-top-color: #fff; border-radius: 50%; animation: girar .7s linear infinite; }
 .btn.carregando .spinner { display: inline-block; }
 
 /* ---- Toasts ---- */
+/* Notificações (toasts): fixas no canto inferior direito; .toast-erro troca a faixa lateral para vermelho. */
 .toasts { position: fixed; right: 18px; bottom: 18px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; width: min(380px, calc(100% - 36px)); }
 .toast {
     display: flex;
@@ -694,6 +775,7 @@ dialog::backdrop { background: rgba(10, 30, 50, .55); backdrop-filter: blur(3px)
 
 
 /* ============================ ANIMAÇÕES ============================ */
+/* Animações reutilizadas pelo layout: entrar, entrar-lado, surgir, esmaecer, girar, pulsar e brilho. */
 @keyframes entrar { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes entrar-lado { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
 @keyframes surgir { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
@@ -702,6 +784,7 @@ dialog::backdrop { background: rgba(10, 30, 50, .55); backdrop-filter: blur(3px)
 @keyframes pulsar { 50% { opacity: .35; } }
 @keyframes brilho { to { background-position: -200% 0; } }
 
+/* Acessibilidade: se a pessoa pediu "menos movimento" no sistema, as animações são praticamente desligadas. */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
@@ -775,6 +858,7 @@ dialog::backdrop { background: rgba(10, 30, 50, .55); backdrop-filter: blur(3px)
     tr.esqueleto td::before { display: none; }
 }
 
+/* Celulares pequenos: tudo em 1 coluna e alguns textos secundários escondidos. */
 @media (max-width: 560px) {
     .stats { grid-template-columns: 1fr; }
     .stat-card:first-child { grid-column: auto; }
